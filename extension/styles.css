@@ -1,0 +1,93 @@
+/* ============================================================
+   Unwired — Injected Styles
+   ============================================================ */
+
+/* ── Content actions ─────────────────────────────────────── */
+
+/* Hidden: completely removed from flow */
+.ig-hidden {
+  display: none !important;
+}
+
+/* Dimmed: faded, lower priority */
+.ig-dim {
+  opacity: 0.3 !important;
+  transition: opacity 0.2s ease;
+}
+
+.ig-dim:hover {
+  opacity: 1 !important;
+}
+
+/* Loading: subtle opacity pulse while scanning */
+.ig-loading {
+  opacity: 0.6 !important;
+  animation: ig-pulse 1s ease-in-out infinite;
+}
+
+@keyframes ig-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.35; }
+}
+
+/* ── Hover filter button on scanned items ────────────────── */
+[data-ig-processed]:not(.ig-hidden) {
+  position: relative;
+}
+
+.ig-filter-btn {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 9999;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  pointer-events: auto;
+  box-shadow: none;
+  opacity: 0;
+}
+
+.ig-filter-btn:hover {
+  background: rgba(239, 68, 68, 0.8);
+  color: #fff;
+}
+
+[data-ig-processed]:hover > .ig-filter-btn {
+  display: flex;
+  opacity: 1;
+}
+
+/* ── YouTube: rows collapsed by the content script */
+ytd-rich-grid-row[data-ig-collapsed="true"] {
+  display: none !important;
+}
+
+/* ── Twitter / X feed fix ────────────────────────────────── */
+[data-testid="cellInnerDiv"]:has(> .ig-hidden) {
+  display: none !important;
+}
+
+/* ── Google Search fix ───────────────────────────────────── */
+#search .ig-hidden,
+#rso .ig-hidden,
+#main .ig-hidden {
+  display: none !important;
+}
+
+/* ── Reddit fix ──────────────────────────────────────────── */
+shreddit-post.ig-hidden,
+.Post.ig-hidden {
+  display: none !important;
+}

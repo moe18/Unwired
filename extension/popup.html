@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unwired</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 380px;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0f14;
+      color: #e8e8ed;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ──────────────────────────────────── */
+    .header {
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .logo {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+      box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: #f0f0f5;
+    }
+
+    .header .subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    /* ── Main content ────────────────────────────── */
+    .content {
+      padding: 18px 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .rules-area {
+      width: 100%;
+      min-height: 110px;
+      max-height: 200px;
+      resize: vertical;
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.65;
+      color: #e8e8ed;
+      background: rgba(255,255,255,0.04);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .rules-area::placeholder {
+      color: rgba(255,255,255,0.22);
+    }
+
+    .rules-area:focus {
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* ── Example chips ───────────────────────────── */
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .example-chip {
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.45);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .example-chip:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    /* ── Apply button ────────────────────────────── */
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
+    }
+
+    .save-btn:hover {
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .save-btn:active {
+      transform: translateY(0) scale(0.98);
+      box-shadow: 0 1px 6px rgba(99, 102, 241, 0.2);
+    }
+
+    .save-btn.saved {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      box-shadow: 0 2px 12px rgba(34, 197, 94, 0.25);
+    }
+
+    /* ── Stats panel ─────────────────────────────── */
+    .stats {
+      display: flex;
+      gap: 2px;
+      padding: 2px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .stat {
+      flex: 1;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 10px;
+      transition: background 0.15s ease;
+    }
+
+    .stat:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #a5b4fc;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-value.hidden-count {
+      color: #f87171;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 3px;
+      font-weight: 600;
+    }
+
+    /* ── Recently Removed section ─────────────────── */
+    .removed-section {
+      padding: 0 20px 4px;
+    }
+
+    .removed-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 8px 0;
+      user-select: none;
+    }
+
+    .removed-header span:first-child {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .removed-count {
+      font-size: 10px;
+      background: rgba(248, 113, 113, 0.15);
+      color: #f87171;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .removed-list {
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-bottom: 8px;
+    }
+
+    .removed-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .removed-list::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+    }
+
+    .removed-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .removed-item-text {
+      flex: 1;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.4;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .removed-item-reason {
+      font-size: 9px;
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.1);
+      padding: 2px 6px;
+      border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .removed-empty {
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      text-align: center;
+      padding: 12px;
+    }
+
+    .removed-list.collapsed {
+      display: none;
+    }
+
+    .removed-header .arrow {
+      font-size: 9px;
+      color: rgba(255,255,255,0.25);
+      margin-left: 6px;
+      transition: transform 0.15s ease;
+    }
+
+    .removed-header.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    /* ── History restore button ──────────────────── */
+    .history-restore-btn {
+      font-size: 9px;
+      padding: 3px 8px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 6px;
+      background: rgba(99, 102, 241, 0.1);
+      color: #a5b4fc;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: all 0.15s ease;
+    }
+
+    .history-restore-btn:hover {
+      background: rgba(99, 102, 241, 0.25);
+    }
+
+    /* ── Settings section ───────────────────────── */
+    .settings-section {
+      padding: 0 20px 4px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 10px 0;
+      user-select: none;
+    }
+
+    .settings-header span:first-child {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .settings-header .arrow {
+      font-size: 9px;
+      color: rgba(255,255,255,0.25);
+      margin-left: 6px;
+      transition: transform 0.15s ease;
+    }
+
+    .settings-header.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    .settings-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 12px;
+    }
+
+    .settings-body.collapsed {
+      display: none;
+    }
+
+    .field-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field-label .optional {
+      text-transform: none;
+      font-weight: 400;
+      color: rgba(255,255,255,0.2);
+    }
+
+    .field-select,
+    .field-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #e8e8ed;
+      background: rgba(255,255,255,0.04);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .field-select:focus,
+    .field-input:focus {
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .field-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.3)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
+
+    .field-select option {
+      background: #1a1a24;
+      color: #e8e8ed;
+    }
+
+    .field-input::placeholder {
+      color: rgba(255,255,255,0.18);
+    }
+
+    .settings-save-btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.6);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-top: 4px;
+    }
+
+    .settings-save-btn:hover {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+    }
+
+    .settings-save-btn.saved {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    /* ── Site selector ──────────────────────────── */
+    .sites-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+      margin: 6px 0 2px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      padding: 4px 0;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #6366f1;
+      cursor: pointer;
+    }
+
+    .toggle-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .site-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 4px 0;
+    }
+
+    .site-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.4);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .site-chip input[type="checkbox"] {
+      display: none;
+    }
+
+    .site-chip:has(input:checked) {
+      border-color: rgba(99, 102, 241, 0.45);
+      background: rgba(99, 102, 241, 0.1);
+      color: #a5b4fc;
+    }
+
+    .site-chip:hover {
+      border-color: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.6);
+    }
+
+    .custom-site-row {
+      display: flex;
+      gap: 6px;
+      padding: 2px 0 0;
+    }
+
+    .custom-site-row .field-input {
+      flex: 1;
+      padding: 7px 10px;
+      font-size: 11px;
+    }
+
+    /* ── No-key banner ──────────────────────────── */
+    .no-key-banner {
+      margin: 0 20px;
+      padding: 12px 14px;
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.18);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .no-key-banner-text {
+      font-size: 11.5px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+    }
+
+    .no-key-banner-text strong {
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    .no-key-banner-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .no-key-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .no-key-btn.primary {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+    }
+
+    .no-key-btn.primary:hover {
+      background: rgba(99, 102, 241, 0.3);
+    }
+
+    .no-key-btn.secondary {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.4);
+    }
+
+    .no-key-btn.secondary:hover {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* ── Status bar ──────────────────────────────── */
+    .status-bar {
+      font-size: 10px;
+      color: rgba(255,255,255,0.2);
+      text-align: center;
+      padding: 4px 20px 16px;
+    }
+
+    .status-bar.connected { color: #4ade80; }
+    .status-bar.offline { color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">UW</div>
+    <div>
+      <h1>Unwired</h1>
+      <div class="subtitle">Your internet, your rules</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <textarea
+      class="rules-area"
+      id="rulesInput"
+      placeholder="Tell me what to filter...&#10;&#10;No clickbait or rage bait&#10;Only show me programming stuff&#10;Hide shorts and ads&#10;No politics or drama"
+    ></textarea>
+
+    <div class="examples" id="examples">
+      <span class="example-chip" data-text="No clickbait">no clickbait</span>
+      <span class="example-chip" data-text="No shorts">no shorts</span>
+      <span class="example-chip" data-text="No politics">no politics</span>
+      <span class="example-chip" data-text="Highlight educational content">highlight educational</span>
+      <span class="example-chip" data-text="No ads or sponsored">no ads</span>
+      <span class="example-chip" data-text="Only programming">only programming</span>
+      <span class="example-chip" data-text="No drama or negativity">no drama</span>
+      <span class="example-chip" data-text="Dim entertainment, highlight learning">boost learning</span>
+    </div>
+
+    <button class="save-btn" id="saveBtn">Apply</button>
+
+    <div class="stats" id="stats" style="display:none;">
+      <div class="stat">
+        <div class="stat-value" id="scannedCount">0</div>
+        <div class="stat-label">Scanned</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value hidden-count" id="hiddenCount">0</div>
+        <div class="stat-label">Hidden</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="siteLabel">-</div>
+        <div class="stat-label">Site</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="no-key-banner" id="noKeyBanner" style="display:none;">
+    <div class="no-key-banner-text">
+      <strong>No API key set.</strong> Add one in Settings for AI-powered filtering, or use basic keyword matching.
+    </div>
+    <div class="no-key-banner-actions">
+      <button class="no-key-btn primary" id="noKeySetupBtn">Set up API key</button>
+      <button class="no-key-btn secondary" id="noKeySkipBtn">Use keyword filter</button>
+    </div>
+  </div>
+
+  <div class="removed-section" id="removedSection" style="display:none;">
+    <div class="removed-header" id="removedToggle">
+      <span>Recently Removed <span class="arrow">&#9654;</span></span>
+      <span class="removed-count" id="removedCount">0</span>
+    </div>
+    <div class="removed-list collapsed" id="removedList"></div>
+  </div>
+
+  <div class="removed-section" id="historySection" style="display:none;">
+    <div class="removed-header" id="historyToggle">
+      <span>Prompt History <span class="arrow">&#9654;</span></span>
+      <span class="removed-count" id="historyCount">0</span>
+    </div>
+    <div class="removed-list collapsed" id="historyList"></div>
+  </div>
+
+  <div class="settings-section" id="settingsSection">
+    <div class="settings-header" id="settingsToggle">
+      <span>Settings <span class="arrow">&#9654;</span></span>
+    </div>
+    <div class="settings-body collapsed" id="settingsBody">
+      <label class="field-label">Provider</label>
+      <select id="providerSelect" class="field-select">
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Claude (Anthropic)</option>
+        <option value="gemini">Gemini (Google)</option>
+        <option value="grok">Grok (xAI)</option>
+        <option value="openrouter">OpenRouter</option>
+      </select>
+
+      <label class="field-label">API Key</label>
+      <input type="password" id="apiKeyInput" class="field-input" placeholder="sk-..." />
+
+      <label class="field-label">Model <span class="optional">(optional &mdash; uses default)</span></label>
+      <input type="text" id="modelInput" class="field-input" placeholder="gpt-4o-mini" />
+
+      <div class="sites-divider"></div>
+      <label class="toggle-row">
+        <input type="checkbox" id="filterBtnCheck" checked />
+        <span class="toggle-label">Show filter buttons on content</span>
+      </label>
+
+      <div class="sites-divider"></div>
+      <label class="field-label">Active Sites</label>
+      <label class="toggle-row">
+        <input type="checkbox" id="allSitesCheck" />
+        <span class="toggle-label">All sites</span>
+      </label>
+      <div class="site-chips" id="siteChips">
+        <label class="site-chip"><input type="checkbox" value="youtube.com" checked /><span>YouTube</span></label>
+        <label class="site-chip"><input type="checkbox" value="x.com" checked /><span>X / Twitter</span></label>
+        <label class="site-chip"><input type="checkbox" value="google" checked /><span>Google</span></label>
+        <label class="site-chip"><input type="checkbox" value="reddit.com" checked /><span>Reddit</span></label>
+        <label class="site-chip"><input type="checkbox" value="facebook.com" /><span>Facebook</span></label>
+        <label class="site-chip"><input type="checkbox" value="instagram.com" /><span>Instagram</span></label>
+        <label class="site-chip"><input type="checkbox" value="tiktok.com" /><span>TikTok</span></label>
+        <label class="site-chip"><input type="checkbox" value="linkedin.com" /><span>LinkedIn</span></label>
+      </div>
+      <div class="custom-site-row" id="customSiteRow">
+        <input type="text" id="customSiteInput" class="field-input" placeholder="Add custom site, e.g. example.com" />
+      </div>
+
+      <button class="settings-save-btn" id="saveSettingsBtn">Save Settings</button>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">Checking...</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
