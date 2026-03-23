@@ -824,7 +824,10 @@
     const data = await new Promise((resolve) => {
       chrome.storage.local.get(["userRules"], resolve);
     });
-    const userRules = data.userRules || "";
+    const userRules = (data.userRules || "").trim();
+
+    // No rules → nothing to filter
+    if (!userRules) return;
 
     const items = extractItems();
     console.log(`[Unwired] Scan: ${items.length} items on ${SITE}, rules: "${userRules.slice(0, 50)}"`);

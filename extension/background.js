@@ -41,7 +41,7 @@ Each item has a site tag like [youtube], [twitter], [google], etc.
 
 Respond with action + reason (2-4 words) for each item.
 
-Be aggressive. The user installed this to clean up their internet. When in doubt, hide.
+ONLY filter what the user's rules ask for. If content doesn't match any rule, show it. When in doubt, show.
 
 Respond ONLY with a valid JSON array. No markdown.
 [{"id":"1","action":"hide","reason":"clickbait"},{"id":"2","action":"show","reason":"relevant"}]`;
