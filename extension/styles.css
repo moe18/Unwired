@@ -19,16 +19,8 @@
   opacity: 1 !important;
 }
 
-/* Loading: subtle opacity pulse while scanning */
-.ig-loading {
-  opacity: 0.6 !important;
-  animation: ig-pulse 1s ease-in-out infinite;
-}
-
-@keyframes ig-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.35; }
-}
+/* Loading: no visual change while scanning */
+.ig-loading {}
 
 /* ── Hover filter button on scanned items ────────────────── */
 [data-ig-processed]:not(.ig-hidden) {
