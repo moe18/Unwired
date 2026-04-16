@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Unwired",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "AI-powered content filter for the entire web. Tell it what you don\u2019t want to see.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage"],
   "host_permissions": [
     "<all_urls>",
     "https://api.openai.com/*",
