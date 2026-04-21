@@ -74,10 +74,29 @@ Chrome Extension (Manifest V3)
 | `hide` | Removed from DOM entirely |
 | `dim` | Faded out, visible on hover |
 | `highlight` | Blue border, stands out |
+| `rewrite` | Title text transformed per display rules (see below) |
+
+## Display Rules
+
+Beyond filtering, you can describe in plain English how visible content should be *displayed*. The LLM rewrites titles and main text on the fly — think of the extension as a display proxy that applies your instructions to the content before you see it. Hover a rewritten item to see the original.
+
+Example display rules:
+
+```
+Summarize long titles in one sentence
+Strip emojis and clickbait punctuation
+Translate non-English content to English
+Make headlines neutral and factual
+Shorten to 60 characters max
+Prefix with a topic tag like [programming]
+```
+
+Display rules are completely separate from filter rules — use one, the other, or both together.
 
 ## Features
 
 - **Natural language rules** — write filters in plain English
+- **Display rules** — describe how visible content should be rewritten (summarize, translate, de-clickbait)
 - **Auto-save** — rules apply as you type (800ms debounce)
 - **Smart reject button** — hover any content to see an X button; clicking it sends the content to the LLM which analyzes the category and rewrites your rules
 - **Prompt history** — every rule change is saved, restore any previous version

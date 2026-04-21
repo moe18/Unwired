@@ -19,6 +19,18 @@
   opacity: 1 !important;
 }
 
+/* Rewritten: title text was transformed by display rules.
+   A thin left accent — visible enough to signal "this was rewritten",
+   subtle enough not to interfere with the site layout. Hover shows
+   the original via a tooltip. */
+[data-ig-rewritten] [data-ig-original-text] {
+  box-shadow: inset 2px 0 0 rgba(99, 102, 241, 0.55);
+  padding-left: 4px;
+}
+[data-ig-rewritten] [data-ig-original-text]::after {
+  content: "";
+}
+
 /* Loading: no visual change while scanning */
 .ig-loading {}
 

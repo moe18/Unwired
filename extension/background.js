@@ -193,6 +193,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "rewriteDisplay") {
+    handleRewriteDisplay(message.payload).then(sendResponse).catch((err) => {
+      sendResponse({ error: true, status: 0, detail: err.message });
+    });
+    return true;
+  }
+
   if (message.type === "health") {
     getSettings().then((settings) => {
       sendResponse({
@@ -315,6 +322,62 @@ async function handleClassify(payload) {
         error: false,
         data: items.map((item) => ({ id: item.id, action: "show", reason: "parse error" })),
       };
+    }
+    return { error: true, status: 0, detail: err.message };
+  }
+}
+
+// ── Rewrite-display handler ──────────────────────────────────
+// Takes a batch of visible items and rewrites each one's text per
+// the user's display instructions (the "proxy display config").
+async function handleRewriteDisplay(payload) {
+  const { items, display_rules } = payload;
+  if (!items || items.length === 0) return { error: false, data: [] };
+  if (!display_rules || !display_rules.trim()) return { error: false, data: [] };
+
+  const settings = await getSettings();
+  // No key → no rewrite (keep original text)
+  if (!settings.apiKey) return { error: false, data: [] };
+
+  const systemPrompt = `You are the user's personal display proxy. You rewrite the visible text of content items before the user sees them, following the user's display instructions.
+
+The user said:
+"${display_rules}"
+
+Rules:
+- Apply the user's instructions literally to each item's text.
+- Keep the same general language unless the user asked to translate.
+- Never invent facts not present in the original.
+- Preserve meaning; only change presentation.
+- If an instruction doesn't apply to an item, leave the text nearly unchanged.
+- Keep each rewrite concise — never longer than the original plus 20 characters.
+- Never include markdown, quotes, or code fences in the rewrite.
+
+Respond ONLY with a valid JSON array, one object per input item, in the same order:
+[{"id":"1","text":"rewritten text"},{"id":"2","text":"..."}]`;
+
+  const itemsText = items
+    .map((i) => `- id="${i.id}": ${String(i.text || "").slice(0, 300)}`)
+    .join("\n");
+  const userPrompt = `Rewrite these ${items.length} items per the display instructions:\n\n${itemsText}`;
+
+  try {
+    const raw = await callLLM(
+      settings.provider,
+      settings.apiKey,
+      settings.model,
+      systemPrompt,
+      userPrompt
+    );
+    const parsed = parseLLMResponse(raw) || [];
+    const rewrites = parsed
+      .filter((r) => r && r.id && typeof r.text === "string")
+      .map((r) => ({ id: String(r.id), text: r.text.trim() }));
+    return { error: false, data: rewrites };
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      console.error("Unwired: Failed to parse display rewrite response", err);
+      return { error: false, data: [] };
     }
     return { error: true, status: 0, detail: err.message };
   }

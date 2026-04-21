@@ -310,6 +310,66 @@
       background: rgba(99, 102, 241, 0.25);
     }
 
+    /* ── Display Rules section ──────────────────── */
+    .display-section {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .display-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 10px 12px;
+      user-select: none;
+    }
+
+    .display-header span:first-child {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .display-sub {
+      text-transform: none;
+      font-weight: 400;
+      font-size: 10px;
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 0;
+    }
+
+    .display-header .arrow {
+      font-size: 9px;
+      color: rgba(255,255,255,0.25);
+      transition: transform 0.15s ease;
+    }
+
+    .display-header.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    .display-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 12px 12px;
+    }
+
+    .display-body.collapsed {
+      display: none;
+    }
+
+    .display-rules-area {
+      min-height: 80px;
+    }
+
     /* ── Settings section ───────────────────────── */
     .settings-section {
       padding: 0 20px 4px;
@@ -610,6 +670,27 @@
     </div>
 
     <button class="save-btn" id="saveBtn">Apply</button>
+
+    <div class="display-section" id="displaySection">
+      <div class="display-header" id="displayToggle">
+        <span>Display Rules <span class="display-sub">rewrite how visible content appears</span> <span class="arrow">&#9654;</span></span>
+      </div>
+      <div class="display-body collapsed" id="displayBody">
+        <textarea
+          class="rules-area display-rules-area"
+          id="displayRulesInput"
+          placeholder="Tell me how to rewrite what I see...&#10;&#10;Summarize long titles in one sentence&#10;Strip emojis and ALL CAPS&#10;Translate foreign text to English&#10;Make headlines neutral and factual"
+        ></textarea>
+        <div class="examples" id="displayExamples">
+          <span class="example-chip" data-display-text="Summarize long titles in one sentence">summarize</span>
+          <span class="example-chip" data-display-text="Strip emojis and clickbait punctuation">no emojis</span>
+          <span class="example-chip" data-display-text="Translate non-English content to English">translate</span>
+          <span class="example-chip" data-display-text="Make headlines neutral and factual">neutral tone</span>
+          <span class="example-chip" data-display-text="Shorten to 60 characters max">shorten</span>
+          <span class="example-chip" data-display-text="Prefix with a topic tag like [programming]">tag topic</span>
+        </div>
+      </div>
+    </div>
 
     <div class="stats" id="stats" style="display:none;">
       <div class="stat">

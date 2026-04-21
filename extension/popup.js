@@ -6,6 +6,9 @@
   "use strict";
 
   const rulesInput = document.getElementById("rulesInput");
+  const displayRulesInput = document.getElementById("displayRulesInput");
+  const displayToggle = document.getElementById("displayToggle");
+  const displayBody = document.getElementById("displayBody");
   const saveBtn = document.getElementById("saveBtn");
   const statusBar = document.getElementById("statusBar");
   const statsDiv = document.getElementById("stats");
@@ -132,6 +135,12 @@
     settingsBody.classList.toggle("collapsed");
   });
 
+  // ── Toggle display rules section ───────────────────────────
+  displayToggle.addEventListener("click", () => {
+    displayToggle.classList.toggle("open");
+    displayBody.classList.toggle("collapsed");
+  });
+
   // No-key banner elements
   const noKeyBanner = document.getElementById("noKeyBanner");
   const noKeySetupBtn = document.getElementById("noKeySetupBtn");
@@ -213,10 +222,18 @@
 
   // ── Load saved rules + settings + recently removed ─────────
   chrome.storage.local.get(
-    ["userRules", "stats", "recentlyRemoved", "rulesHistory", "llmProvider", "apiKey", "modelName", "allSites", "enabledSites", "showFilterButtons"],
+    ["userRules", "displayRules", "stats", "recentlyRemoved", "rulesHistory", "llmProvider", "apiKey", "modelName", "allSites", "enabledSites", "showFilterButtons"],
     (data) => {
       rulesInput.value = data.userRules || "";
       lastSavedRules = (data.userRules || "").trim();
+      displayRulesInput.value = data.displayRules || "";
+      lastSavedDisplayRules = (data.displayRules || "").trim();
+
+      // Auto-open the display section if the user has any rules set
+      if (lastSavedDisplayRules) {
+        displayToggle.classList.add("open");
+        displayBody.classList.remove("collapsed");
+      }
 
       // Show stats if we have them
       if (data.stats) {
@@ -360,17 +377,29 @@
   // ── Example chips — click to append to rules ───────────────
   document.querySelectorAll(".example-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
-      const text = chip.dataset.text;
-      const current = rulesInput.value.trim();
-      if (current.toLowerCase().includes(text.toLowerCase())) return;
-      rulesInput.value = current ? `${current}\n${text}` : text;
-      rulesInput.focus();
+      // Filter-rule chips target rulesInput; display-rule chips target displayRulesInput
+      if (chip.dataset.displayText) {
+        const text = chip.dataset.displayText;
+        const current = displayRulesInput.value.trim();
+        if (current.toLowerCase().includes(text.toLowerCase())) return;
+        displayRulesInput.value = current ? `${current}\n${text}` : text;
+        saveDisplayRules();
+        displayRulesInput.focus();
+      } else if (chip.dataset.text) {
+        const text = chip.dataset.text;
+        const current = rulesInput.value.trim();
+        if (current.toLowerCase().includes(text.toLowerCase())) return;
+        rulesInput.value = current ? `${current}\n${text}` : text;
+        rulesInput.focus();
+      }
     });
   });
 
   // ── Auto-save rules on edit (debounced) ────────────────────
   let rulesSaveTimer = null;
   let lastSavedRules = null; // track to avoid duplicate history entries
+  let displaySaveTimer = null;
+  let lastSavedDisplayRules = null;
 
   function saveRulesToHistory(oldRules) {
     if (!oldRules) return;
@@ -400,6 +429,18 @@
     // Show "Apply" as a visual indicator that changes are pending
     saveBtn.textContent = "Apply";
     saveBtn.classList.remove("saved");
+  });
+
+  function saveDisplayRules() {
+    const rules = displayRulesInput.value.trim();
+    if (rules === lastSavedDisplayRules) return;
+    lastSavedDisplayRules = rules;
+    chrome.storage.local.set({ displayRules: rules });
+  }
+
+  displayRulesInput.addEventListener("input", () => {
+    clearTimeout(displaySaveTimer);
+    displaySaveTimer = setTimeout(saveDisplayRules, 800);
   });
 
   // ── Apply button — immediate save + visual feedback ────────
@@ -463,6 +504,13 @@
       if (rulesInput.value.trim() !== newRules.trim()) {
         rulesInput.value = newRules;
         lastSavedRules = newRules.trim();
+      }
+    }
+    if (changes.displayRules) {
+      const newRules = changes.displayRules.newValue || "";
+      if (displayRulesInput.value.trim() !== newRules.trim()) {
+        displayRulesInput.value = newRules;
+        lastSavedDisplayRules = newRules.trim();
       }
     }
   });

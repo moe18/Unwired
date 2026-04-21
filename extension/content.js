@@ -15,11 +15,14 @@
 
   // ── State ──────────────────────────────────────────────────
   const cache = new Map();
+  const displayCache = new Map(); // keyed by `${item.id}|${displayRulesHash}`
   const processed = new WeakSet();
+  const rewritten = new WeakSet(); // elements with a display-rewrite applied
   let scanTimer = null;
   let totalScanned = 0;
   let totalHidden = 0;
   let rulesGeneration = 0; // bumped on every rule change — stale results discarded
+  let displayGeneration = 0; // bumped on display-rule change — stale rewrite responses discarded
 
   const MAX_RECENT = 50;
   let mutationsPaused = false;
@@ -194,7 +197,7 @@
                         el.querySelector("[is-short]") !== null;
 
         const parts = [title, channel, meta, isShort ? "[YouTube Short]" : ""].filter(Boolean);
-        items.push({ element: el, text: parts.join(" | ") });
+        items.push({ element: el, text: parts.join(" | "), titleEl, titleText: title });
       });
 
       // Shorts shelf as a whole block (so "no shorts" hides the entire row)
@@ -280,7 +283,7 @@
 
         const label = promoted ? "[Sponsored Ad] " : "";
         const content = text || el.textContent.trim().slice(0, 300);
-        items.push({ element: wrapper, text: `${label}${content}` });
+        items.push({ element: wrapper, text: `${label}${content}`, titleEl: tweetText || null, titleText: text });
       });
 
       // Non-tweet promotional cells (Who to Follow, Premium prompts, etc.)
@@ -311,12 +314,12 @@
       const items = [];
       const seen = new Set();
 
-      function addResult(el, text) {
+      function addResult(el, text, titleEl, titleText) {
         if (!text || text.length < MIN_TEXT_LENGTH) return;
         const key = text.slice(0, 80);
         if (seen.has(key)) return;
         seen.add(key);
-        items.push({ element: el, text });
+        items.push({ element: el, text, titleEl: titleEl || null, titleText: titleText || "" });
       }
 
       // Strategy 1: containers with an h3 (most stable — Google always uses h3 for result titles)
@@ -344,7 +347,7 @@
         });
         const snippet = snippetParts.join(" ").slice(0, 300);
 
-        addResult(container, `${title} — ${snippet}`);
+        addResult(container, `${title} — ${snippet}`, h3, title);
       });
 
       // Strategy 2: classic .g containers (fallback for older/cached layouts)
@@ -353,7 +356,7 @@
         if (!titleEl) return;
         const title = titleEl.textContent.trim();
         const snippet = el.textContent.replace(title, "").trim().slice(0, 300);
-        addResult(el, `${title} — ${snippet}`);
+        addResult(el, `${title} — ${snippet}`, titleEl, title);
       });
 
       // Strategy 3: "People also ask" — structural approach
@@ -378,10 +381,10 @@
 
       // New Reddit / Shreddit
       document.querySelectorAll("shreddit-post, [data-testid='post-container'], .Post").forEach((el) => {
-        const title = el.getAttribute("post-title") ||
-                      el.querySelector("h3, [slot='title'], a[data-click-id='body']")?.textContent?.trim();
+        const titleEl = el.querySelector("h3, [slot='title'], a[data-click-id='body']");
+        const title = el.getAttribute("post-title") || titleEl?.textContent?.trim();
         if (!title) return;
-        items.push({ element: el, text: title });
+        items.push({ element: el, text: title, titleEl: titleEl || null, titleText: title });
       });
 
       return items;
@@ -545,6 +548,20 @@
     const items = [];
     for (const item of raw) {
       if (processed.has(item.element)) continue;
+      if (!item.text || item.text.length < MIN_TEXT_LENGTH) continue;
+      item.id = hashText(item.text.slice(0, 200));
+      items.push(item);
+    }
+    return items;
+  }
+
+  // Raw extraction — used by the display-rewrite pass so it can
+  // revisit items that were already classified by the filter pass.
+  function extractAllItems() {
+    const extractor = extractors[SITE] || extractors.generic;
+    const raw = extractor();
+    const items = [];
+    for (const item of raw) {
       if (!item.text || item.text.length < MIN_TEXT_LENGTH) continue;
       item.id = hashText(item.text.slice(0, 200));
       items.push(item);
@@ -819,27 +836,149 @@
     mutationsPaused = false;
   }
 
+  // ── Apply a single display rewrite to an element's title ────
+  function applyRewrite(element, titleEl, newText, originalText) {
+    if (!titleEl || !newText || typeof newText !== "string") return;
+    const trimmed = newText.trim();
+    if (!trimmed || trimmed === (originalText || "").trim()) return;
+    // Preserve the original so we can restore it if display rules change
+    const original = originalText || titleEl.textContent || "";
+    if (!titleEl.dataset.igOriginalText) {
+      titleEl.dataset.igOriginalText = original;
+    }
+    titleEl.textContent = trimmed;
+    titleEl.setAttribute("title", `Original: ${original.slice(0, 300)}`);
+    element.dataset.igRewritten = "true";
+    rewritten.add(element);
+  }
+
+  // ── Restore titles that were rewritten (display rules cleared) ─
+  function restoreRewrites() {
+    document.querySelectorAll("[data-ig-rewritten]").forEach((el) => {
+      // Find any child title element whose original text was saved
+      el.querySelectorAll("[data-ig-original-text]").forEach((t) => {
+        t.textContent = t.dataset.igOriginalText;
+        delete t.dataset.igOriginalText;
+        t.removeAttribute("title");
+      });
+      delete el.dataset.igRewritten;
+      rewritten.delete(el);
+    });
+  }
+
+  // ── Send a batch of visible items for display rewriting ────
+  async function rewriteDisplayBatch(items, displayRules, displayHash) {
+    const gen = displayGeneration;
+    const uncached = [];
+    const results = new Map();
+
+    for (const item of items) {
+      const key = `${item.id}|${displayHash}`;
+      const cached = displayCache.get(key);
+      if (cached !== undefined) {
+        if (cached !== null) results.set(item.id, cached);
+      } else {
+        uncached.push(item);
+      }
+    }
+
+    if (uncached.length > 0) {
+      const payload = {
+        items: uncached.map((i) => ({
+          id: i.id,
+          text: (i.titleText || i.text || "").slice(0, 300),
+        })),
+        display_rules: displayRules,
+      };
+
+      try {
+        const resp = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({ type: "rewriteDisplay", payload }, resolve);
+        });
+
+        if (gen !== displayGeneration) return; // stale
+
+        if (!resp || resp.error) {
+          console.warn("[Unwired] Display rewrite error:", resp?.status, resp?.detail);
+          return;
+        }
+
+        const rewrites = resp.data || [];
+        const byId = new Map(rewrites.map((r) => [String(r.id), r.text]));
+
+        for (const item of uncached) {
+          const newText = byId.get(String(item.id));
+          const key = `${item.id}|${displayHash}`;
+          if (newText) {
+            displayCache.set(key, newText);
+            results.set(item.id, newText);
+          } else {
+            // Cache "no rewrite" as null so we don't re-ask
+            displayCache.set(key, null);
+          }
+        }
+      } catch (err) {
+        console.error("[Unwired] Display rewrite network error:", err.message);
+        return;
+      }
+    }
+
+    mutationsPaused = true;
+    for (const item of items) {
+      const newText = results.get(item.id);
+      if (newText) {
+        applyRewrite(item.element, item.titleEl, newText, item.titleText);
+      }
+    }
+    mutationsPaused = false;
+  }
+
   // ── Main scan cycle ────────────────────────────────────────
   async function scan() {
     const data = await new Promise((resolve) => {
-      chrome.storage.local.get(["userRules"], resolve);
+      chrome.storage.local.get(["userRules", "displayRules"], resolve);
     });
     const userRules = (data.userRules || "").trim();
+    const displayRules = (data.displayRules || "").trim();
 
-    // No rules → nothing to filter
-    if (!userRules) return;
+    // Neither set → nothing to do
+    if (!userRules && !displayRules) return;
 
     const items = extractItems();
-    console.log(`[Unwired] Scan: ${items.length} items on ${SITE}, rules: "${userRules.slice(0, 50)}"`);
+    console.log(`[Unwired] Scan: ${items.length} items on ${SITE}, filter="${userRules.slice(0, 40)}", display="${displayRules.slice(0, 40)}"`);
     if (items.length === 0) return;
 
-    // Send all batches in parallel for speed
-    const promises = [];
-    for (let i = 0; i < items.length; i += BATCH_SIZE) {
-      const batch = items.slice(i, i + BATCH_SIZE);
-      promises.push(classifyBatch(batch, userRules));
+    // Pass 1: classify (filter) — only if userRules is set
+    if (userRules) {
+      const promises = [];
+      for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        const batch = items.slice(i, i + BATCH_SIZE);
+        promises.push(classifyBatch(batch, userRules));
+      }
+      await Promise.all(promises);
     }
-    await Promise.all(promises);
+
+    // Pass 2: rewrite display text for visible items — only if displayRules is set
+    if (!displayRules) return;
+
+    const displayHash = hashText(displayRules);
+    // Re-extract without the `processed` filter so we can rewrite items that
+    // were already classified by a prior filter-pass scan.
+    const allItems = extractAllItems();
+    const visibleItems = allItems.filter(
+      (i) =>
+        i.titleEl &&
+        i.titleText &&
+        !i.element.classList.contains("ig-hidden") &&
+        !rewritten.has(i.element)
+    );
+
+    const rewritePromises = [];
+    for (let i = 0; i < visibleItems.length; i += BATCH_SIZE) {
+      const batch = visibleItems.slice(i, i + BATCH_SIZE);
+      rewritePromises.push(rewriteDisplayBatch(batch, displayRules, displayHash));
+    }
+    await Promise.all(rewritePromises);
   }
 
   // ── Debounced scan trigger ─────────────────────────────────
@@ -917,6 +1056,8 @@
     if (!siteEnabled) return;
     siteEnabled = false;
     observer.disconnect();
+    // Restore rewritten titles before clearing processed markers
+    restoreRewrites();
     // Clean up any applied filters
     document.querySelectorAll("[data-ig-processed]").forEach((el) => {
       el.classList.remove("ig-hidden", "ig-highlight", "ig-dim", "ig-loading");
@@ -933,6 +1074,7 @@
     totalScanned = 0;
     totalHidden = 0;
     cache.clear();
+    displayCache.clear();
   }
 
   // Initial site check
@@ -972,6 +1114,14 @@
           addFilterButton(el);
         });
       }
+    }
+
+    if (changes.displayRules) {
+      if (!siteEnabled) return;
+      displayGeneration++;
+      displayCache.clear();
+      restoreRewrites();
+      scheduleScan();
     }
 
     if (changes.userRules) {
