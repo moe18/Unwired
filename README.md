@@ -6,6 +6,8 @@
 
 LLM-powered Chrome extension that filters low-value, distracting, and manipulative content from the web. Tell it what you don't want to see and dont see it. so many people are fighting for your attention its time for you to fight back.
 
+you can get the chrome extention here https://chromewebstore.google.com/detail/unwired/eagjafndbcedibfalnfimildfphokffn
+
 ## Quick Start
 
 1. Open Chrome and go to `chrome://extensions/`
